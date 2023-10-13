@@ -1,10 +1,11 @@
 import click
 import numpy as np
+import pickle
 from sklearn.model_selection import cross_val_score
 
-from src.data.make_dataset import make_dataset
-from src.features.make_features import make_features
-from src.model.main import make_model
+from data.make_dataset import make_dataset
+from features.make_features import make_features
+from model.main import make_model
 
 @click.group()
 def cli():
@@ -13,16 +14,18 @@ def cli():
 
 @click.command()
 @click.option("--task", help="Can be is_comic_video, is_name or find_comic_name")
-@click.option("--input_filename", default="data/raw/train.csv", help="File training data")
+@click.option("--input_filename", default="data/raw/train.csv", help="File training data") # /Users/boes/Data/NLP/names_train - names_train.csv
 @click.option("--model_dump_filename", default="models/dump.json", help="File to dump model")
 def train(task, input_filename, model_dump_filename):
     df = make_dataset(input_filename)
-    X, y = make_features(df)
+    X, y = make_features(df,task)
 
     model = make_model()
     model.fit(X, y)
 
-    return model.dump(model_dump_filename)
+    with open(model_dump_filename, 'wb') as f:
+        pickle.dump(model, f)
+
 
 
 @click.command()
@@ -37,7 +40,8 @@ def test(task, input_filename, model_dump_filename, output_filename):
 @click.command()
 @click.option("--task", help="Can be is_comic_video, is_name or find_comic_name")
 @click.option("--input_filename", default="data/raw/train.csv", help="File training data")
-def evaluate(task, input_filename):
+@click.option("--model_dump_filename", default="models/dump.json", help="File to dump model")
+def evaluate(task, input_filename, model_dump_filename):
     # Read CSV
     df = make_dataset(input_filename)
 
@@ -45,7 +49,9 @@ def evaluate(task, input_filename):
     X, y = make_features(df, task)
 
     # Object with .fit, .predict methods
-    model = make_model()
+    # model = make_model()
+    with open(model_dump_filename, 'rb') as f:
+        model = pickle.load(f)
 
     # Run k-fold cross validation. Print results
     return evaluate_model(model, X, y)
