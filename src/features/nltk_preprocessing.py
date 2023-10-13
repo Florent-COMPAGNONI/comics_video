@@ -1,8 +1,3 @@
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.pipeline import Pipeline
-from sklearn.base import BaseEstimator, TransformerMixin
-
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -16,13 +11,8 @@ import re
 import string
 import numpy as np
 import contractions
+from sklearn.base import BaseEstimator, TransformerMixin
 
-def make_model():
-    return Pipeline([
-        ("nltk_preprocessor", NltkTextPreprocessor() )
-        ("count_vectorizer", CountVectorizer()),
-        ("random_forest", RandomForestClassifier()),
-    ])
 
 class NltkTextPreprocessor(TransformerMixin, BaseEstimator):
   def __init__(self):
@@ -122,6 +112,6 @@ class NltkPreprocessingSteps:
                      if word not in self.sw_nltk]) )
     return self
 
+
   def get_processed_text(self):
     return self.X
-
