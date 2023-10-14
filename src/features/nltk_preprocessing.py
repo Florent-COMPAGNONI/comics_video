@@ -4,6 +4,7 @@ from nltk.tokenize import word_tokenize
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
+from nltk.stem.snowball import FrenchStemmer, SnowballStemmer
 
 from bs4 import BeautifulSoup
 from unidecode import unidecode
@@ -18,7 +19,7 @@ class NltkTextPreprocessor(TransformerMixin, BaseEstimator):
   def __init__(self):
     pass
 
-  def fit(self, X):
+  def fit(self, X, y):
     return self
 
   def transform(self, X):
@@ -32,6 +33,7 @@ class NltkTextPreprocessor(TransformerMixin, BaseEstimator):
             .remove_double_spaces()\
             .remove_all_punctuations()\
             .remove_stopwords()\
+            .stemming()\
             .get_processed_text()
 
     return processed_text
@@ -112,6 +114,20 @@ class NltkPreprocessingSteps:
                      if word not in self.sw_nltk]) )
     return self
 
+  def stemming(self):
+    ps = FrenchStemmer()
+    # ps = SnowballStemmer(language='french')
+    self.X = self.X.apply(lambda x: " ".join([
+      ps.stem(word) 
+      for word in word_tokenize(x)]))
+    return self
+  
+  def lemming(self):
+    wnl = WordNetLemmatizer()
+    self.X = self.X.apply(lambda x: " ".join([
+      wnl.lemmatize(word) 
+      for word in word_tokenize(x)]))
+    return self
 
   def get_processed_text(self):
     return self.X
