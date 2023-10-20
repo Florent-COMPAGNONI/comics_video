@@ -5,7 +5,7 @@ from sklearn.model_selection import cross_val_score
 
 from data.make_dataset import make_dataset
 from features.make_features import make_features
-from model.main import make_model
+from model.main import make_model, make_ner_model
 
 @click.group()
 def cli():
@@ -49,9 +49,9 @@ def evaluate(task, input_filename, model_dump_filename):
     X, y = make_features(df, task)
 
     # Object with .fit, .predict methods
-    # model = make_model()
-    with open(model_dump_filename, 'rb') as f:
-        model = pickle.load(f)
+    model = make_ner_model()
+    # with open(model_dump_filename, 'rb') as f:
+    #     model = pickle.load(f)
 
     # Run k-fold cross validation. Print results
     return evaluate_model(model, X, y)
