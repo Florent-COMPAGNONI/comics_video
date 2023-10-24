@@ -28,11 +28,11 @@ class NltkTextPreprocessor(TransformerMixin, BaseEstimator):
             .to_lower()\
             .replace_diacritics()\
             .remove_numbers()\
-            .remove_punctuations_except_periods()\
             .remove_double_spaces()\
             .remove_all_punctuations()\
             .remove_stopwords()\
             .stemming()\
+            .lemming()\
             .get_processed_text()
 
     return processed_text
@@ -55,11 +55,6 @@ class NltkPreprocessingSteps:
     download_if_non_existent('corpora/omw-1.4', 'omw-1.4')
 
     self.sw_nltk = stopwords.words('french')
-
-  def remove_html_tags(self):
-    self.X = self.X.apply(
-            lambda x: BeautifulSoup(x, 'html.parser').get_text())
-    return self
   
   #permet d’éliminer tous les accents
   def replace_diacritics(self):
@@ -68,7 +63,7 @@ class NltkPreprocessingSteps:
     return self
 
   def to_lower(self):
-    self.X = np.apply_along_axis(lambda x: x.lower(), self.X)
+    self.X = self.X.str.lower()
     return self
 
   def remove_numbers(self):
@@ -77,12 +72,6 @@ class NltkPreprocessingSteps:
 
   def replace_dots_with_spaces(self):
     self.X = self.X.apply(lambda x: re.sub("[.]", " ", x))
-    return self
-
-  def remove_punctuations_except_periods(self):
-    self.X = self.X.apply(
-                 lambda x: re.sub('[%s]' %
-                  re.escape(self.remove_punctuations), '' , x))
     return self
 
   def remove_all_punctuations(self):

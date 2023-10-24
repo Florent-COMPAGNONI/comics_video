@@ -1,6 +1,7 @@
 import click
 import numpy as np
 import pickle
+from tqdm import tqdm
 from sklearn.model_selection import cross_val_score
 
 from data.make_dataset import make_dataset
@@ -40,7 +41,7 @@ def test(task, input_filename, model_dump_filename, output_filename):
 @click.command()
 @click.option("--task", help="Can be is_comic_video, is_name or find_comic_name")
 @click.option("--input_filename", default="data/raw/train.csv", help="File training data")
-@click.option("--model_dump_filename", default="models/dump.json", help="File to dump model")
+@click.option("--model_dump_filename", default="models/model.pkl", help="File to dump model")
 def evaluate(task, input_filename, model_dump_filename):
     # Read CSV
     df = make_dataset(input_filename)
@@ -49,9 +50,9 @@ def evaluate(task, input_filename, model_dump_filename):
     X, y = make_features(df, task)
 
     # Object with .fit, .predict methods
-    # model = make_model()
-    with open(model_dump_filename, 'rb') as f:
-        model = pickle.load(f)
+    model = make_model()
+    """with open(model_dump_filename, 'rb') as f:
+        model = pickle.load(f)"""
 
     # Run k-fold cross validation. Print results
     return evaluate_model(model, X, y)
@@ -59,9 +60,12 @@ def evaluate(task, input_filename, model_dump_filename):
 
 def evaluate_model(model, X, y):
     # Scikit learn has function for cross validation
-    scores = cross_val_score(model, X, y, scoring="accuracy")
+    list_scores = []
+    for i in tqdm(range(10)):
+        scores = cross_val_score(model, X, y, scoring="accuracy")
+        list_scores.append(np.mean(scores))
 
-    print(f"Got accuracy {100 * np.mean(scores)}%")
+    print(f"Got accuracy {100 * np.mean(list_scores)}%")
 
     return scores
 
