@@ -2,10 +2,10 @@ import click
 import numpy as np
 import pickle
 from sklearn.model_selection import cross_val_score
-
 from data.make_dataset import make_dataset
 from features.make_features import make_features
 from model.main import make_model, make_ner_model
+
 
 @click.group()
 def cli():
@@ -14,18 +14,17 @@ def cli():
 
 @click.command()
 @click.option("--task", help="Can be is_comic_video, is_name or find_comic_name")
-@click.option("--input_filename", default="data/raw/train.csv", help="File training data") # /Users/boes/Data/NLP/names_train - names_train.csv
+@click.option("--input_filename", default="data/raw/train.csv", help="File training data")  # /Users/boes/Data/NLP/names_train - names_train.csv
 @click.option("--model_dump_filename", default="models/dump.json", help="File to dump model")
 def train(task, input_filename, model_dump_filename):
     df = make_dataset(input_filename)
-    X, y = make_features(df,task)
+    X, y = make_features(df, task)
 
     model = make_model()
     model.fit(X, y)
 
-    with open(model_dump_filename, 'wb') as f:
+    with open(model_dump_filename, "wb") as f:
         pickle.dump(model, f)
-
 
 
 @click.command()
@@ -49,7 +48,15 @@ def evaluate(task, input_filename, model_dump_filename):
     X, y = make_features(df, task)
 
     # Object with .fit, .predict methods
-    model = make_ner_model()
+    if task == "is_comic_video":
+        model = make_model()
+    elif task == "is_name":
+        model = make_ner_model()
+    elif task == "find_comic_name":
+        raise Exception("This task is not implemented yet, stay tuned ;)")
+    else:
+        raise Exception("Invalid task, valid tasks are: is_comic_video, is_name, find_comic_name")
+
     # with open(model_dump_filename, 'rb') as f:
     #     model = pickle.load(f)
 
@@ -59,7 +66,7 @@ def evaluate(task, input_filename, model_dump_filename):
 
 def evaluate_model(model, X, y):
     # Scikit learn has function for cross validation
-    scores = cross_val_score(model, X, y, scoring="accuracy")
+    scores = cross_val_score(model, X, y, scoring="accuracy", error_score="raise")
 
     print(f"Got accuracy {100 * np.mean(scores)}%")
 
