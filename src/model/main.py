@@ -14,8 +14,8 @@ def make_model():
             # ("nltk_preprocessor", NltkTextPreprocessor()),
             ("spacy_preprocessor", SpacyTextPreprocessor()),
             # ("count_vectorizer", CountVectorizer()),
-            # ("tfidf_vectorizer", TfidfVectorizer()),
-            ("embedding", MeanEmbeddingVectorizer()),
+            ("tfidf_vectorizer", TfidfVectorizer()),
+            #("embedding", MeanEmbeddingVectorizer()),
             ("random_forest", RandomForestClassifier()),
         ]
     )

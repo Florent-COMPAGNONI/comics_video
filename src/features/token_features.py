@@ -17,9 +17,9 @@ def custom_split(s: str) -> list[str]:
     """
     Custom tokenizer used by is_name task
     """
-    # Handle special cases
+    # Handle special cases : quand on retrouve ': on le remplace par ' "
     s = re.sub(r".':.", "' : ", s)
-    # Handle the apostrophe
+    # Handle the apostrophe : quand une apostrophe (qui n'est pas au début d'une phrase) est suivi par un charactère, on rajoute un espace entre cette apostrophe et le charactère qui suit 
     s = re.sub(r"([ \w])'([\S]|$)", r"\1' \2", s)
     # Cut into tokens
     tokens = re.findall(r"[\S\u00a0]+|  | $", s)
@@ -48,7 +48,7 @@ class TokenFeaturesWithNLTK(BaseEstimator, TransformerMixin):
                     "is_capitalized": token[0].isupper(),
                     "prefix-2": token[:2],
                     "suffix-2": token[-2:],
-                    "is_lemma": token == self.wnl.lemmatize(token),
+                    "is_lemma": token == self.wnl.lemmatize(token), #test si token est égale à la racine
                     "is_starting_word": i == 0,
                     "is_final_word": i == len(splited_title) - 1,
                     "is_punct": token in self.punctuation,
@@ -126,9 +126,44 @@ class FlattenTransformer(BaseEstimator, TransformerMixin):
         ]
         if y is not None:
             y_flat = [label for labels in y for label in labels]
+            # print percentage of 1's 
+            one_list = [i for i in y_flat if i == 1]
+            print(1-(len(one_list)/len(y_flat)))
             return X_flat, y_flat
 
         return X_flat
+    
+class FlattenTransformer2(BaseEstimator, TransformerMixin):
+    """
+    Flatten the feature dict, to be used to train classic ml model
+    """
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        X_flat = []
+        for sentence in X:
+            sentence_features = []
+            for token in sentence :
+                token_features = [
+                    1 if token["is_capitalized"] else 0,
+                    1 if token["is_lemma"] else 0,
+                    1 if token["is_starting_word"] else 0,
+                    1 if token["is_final_word"] else 0,
+                    1 if token["is_punct"] else 0,
+                    1 if token["is_stop"] else 0,
+                ]
+                sentence_features.append(token_features)
+            X_flat.append([token_feature for token in sentence_features for token_feature in token])
+        
+        if y is not None :
+            print(X_flat)
+            print(y)
+            return X_flat, y
+        
+        else :
+            return X_flat
 
 
 class ReshapeTransformer(BaseEstimator, TransformerMixin):

@@ -15,13 +15,20 @@ def cli():
 
 @click.command()
 @click.option("--task", help="Can be is_comic_video, is_name or find_comic_name")
-@click.option("--input_filename", default="data/raw/train.csv", help="File training data")  # /Users/boes/Data/NLP/names_train - names_train.csv
+@click.option("--input_filename", default="data/raw/train.csv", help="File training data")  # /Users/boes/Data/NLP/names_train.csv
 @click.option("--model_dump_filename", default="models/dump.json", help="File to dump model")
 def train(task, input_filename, model_dump_filename):
     df = make_dataset(input_filename)
     X, y = make_features(df, task)
 
-    model = make_model()
+    if task == "is_comic_video":
+        model = make_model()
+    elif task == "is_name":
+        model = make_ner_model()
+    elif task == "find_comic_name":
+        model = make_ner_model()
+    else:
+        raise Exception("Invalid task, valid tasks are: is_comic_video, is_name, find_comic_name")
     model.fit(X, y)
 
     with open(model_dump_filename, "wb") as f:
