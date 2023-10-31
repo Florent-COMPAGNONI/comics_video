@@ -74,3 +74,23 @@ Nous avons rajouté les étapes de processing suivantes :
 Dans embedding.py nous utilisons gensim.models.Word2Vec() pour entrainer le Word2Vec() sur notre dataset
 
 Accuracy 87.5, donc ne fonctionne pas très bien
+
+
+# Experimentation sur le modèle de Named Entity Recognition 
+
+## Token preprocessing avec NLTK
+
+Pour cette tâche nous avons extrait des features pour chaqu'un des tokens. Les features retenus dans un premier temps sont toute de type binaires
+
+- **is_capitalized**: si la première lettre est une majuscule
+- **is_lemma**: si la lemmatisation du token ne produit pas de changement
+- **is_starting_word**: si le token est le premier mots du titre 
+- **is_final_word**: si le token est le dernier mots du titre  
+- **is_punct**: si le token est de la ponctuation
+- **is_stop**: si le token est un stopword contenu dans la liste de nltk
+
+## Prédiction token par token
+
+Notre première approche a été de predire un résultat pour chaque token indépendament de la séquence dans laquelle il se trouve.   
+Pour cela nous avons "aplatit" les inputs et outputs utilisé pour l'entrainement.  
+Le problème de cette méthode est que l'on se retrouve avec un dataset déséquilibré, ce qui pousse notre modèle à toujour prédir la label et le rend inutilisable pour la 3ème tâche.
