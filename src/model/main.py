@@ -11,9 +11,9 @@ from features.embedding import MeanEmbeddingVectorizer
 def make_model():
     return Pipeline(
         [
-            # ("nltk_preprocessor", NltkTextPreprocessor()),
+            #("nltk_preprocessor", NltkTextPreprocessor()),
             ("spacy_preprocessor", SpacyTextPreprocessor()),
-            # ("count_vectorizer", CountVectorizer()),
+            #("count_vectorizer", CountVectorizer()),
             ("tfidf_vectorizer", TfidfVectorizer()),
             #("embedding", MeanEmbeddingVectorizer()),
             ("random_forest", RandomForestClassifier()),
