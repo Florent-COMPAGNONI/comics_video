@@ -8,6 +8,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from tqdm import tqdm
+import tensorflow as tf
 
 
 def custom_split(s: str) -> list[str]:
@@ -161,16 +162,14 @@ class FlattenTransformer(BaseEstimator, TransformerMixin):
 
         return X_flat
     
-class FlattenTransformer2(BaseEstimator, TransformerMixin):
-    """
-    Flatten the feature dict, to be used to train classic ml model
-    """
+
+class TokenFeaturing(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         return self
 
     def transform(self, X, y=None):
-        X_flat = []
+        X_token_features = []
         for sentence in X:
             sentence_features = []
             for token in sentence :
@@ -183,15 +182,18 @@ class FlattenTransformer2(BaseEstimator, TransformerMixin):
                     1 if token["is_stop"] else 0,
                 ]
                 sentence_features.append(token_features)
-            X_flat.append([token_feature for token in sentence_features for token_feature in token])
+            X_token_features.append([token_feature for token in sentence_features for token_feature in token])
+            #X_token_features.append(sentence_features)
+            X_padded = tf.keras.preprocessing.sequence.pad_sequences(X_token_features, maxlen=30*6, padding='post', truncating='post', value=0)
         
         if y is not None :
-            print(X_flat)
-            print(y)
-            return X_flat, y
+            #print(X_padded)
+            y_padded = tf.keras.preprocessing.sequence.pad_sequences(y, maxlen=30, padding='post', truncating='post', value=0)
+            #print(y_padded)
+            return X_padded, y_padded
         
         else :
-            return X_flat
+            return X_padded, None
 
 
 class ReshapeTransformer(BaseEstimator, TransformerMixin):
