@@ -1,16 +1,13 @@
+from typing import Any
 import spacy
-import stanza
 import re
 import string
+import numpy as np
 from spacy.tokens import Doc
 from sklearn.base import BaseEstimator, TransformerMixin
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from tqdm import tqdm
-
-
-# download using command: python -c "import stanza; stanza.download('fr')"
-# nlp_stanza = stanza.Pipeline(lang="fr")
 
 
 def custom_split(s: str) -> list[str]:
@@ -60,9 +57,40 @@ class TokenFeaturesWithNLTK(BaseEstimator, TransformerMixin):
         return features
 
 
+class TokenFeaturesWithNLTK_v2(BaseEstimator, TransformerMixin):
+    """
+    Custom transformer to extract token-level features with nltk
+    """
+
+    def fit(self, X, y=None):
+        self.X = X
+        self.wnl = WordNetLemmatizer()
+        self.punctuation = string.punctuation
+        self.stopwords = stopwords.words("french")
+        return self
+
+    def transform(self, X):
+        features = []
+        for title in tqdm(self.X, desc="Tokens Features Extraction: "):
+            splited_title = custom_split(title)
+            tokens_data = [
+                [
+                    1 if token[0].isupper() else 0,                 # is_capitalized
+                    1 if token == self.wnl.lemmatize(token) else 0, # is_lemma
+                    1 if i == 0 else 0,                             # is_starting_word
+                    1 if i == len(splited_title) - 1 else 0,        # is_final_word
+                    1 if token in self.punctuation else 0,          # is_punct
+                    1 if token in self.stopwords else 0,            # is_stopword
+                ]
+                for i, token in enumerate(splited_title)
+            ]
+            features.append(tokens_data)
+        return features
+
 class TokenFeaturesWithSpacy(BaseEstimator, TransformerMixin):
     """
-    Custom transformer to extract token-level features with nltk, not working yet
+    not working
+    Custom transformer to extract token-level features with nltk
     download spacy model using command: python -m spacy download fr_core_news_sm
     """
 
@@ -195,3 +223,72 @@ class ReshapeTransformer(BaseEstimator, TransformerMixin):
             return X_reshaped, y_reshaped
 
         return X_reshaped
+
+
+class PaddingTransformer(BaseEstimator, TransformerMixin):
+    """
+    add padding to input & output to have consistent shape
+    work when features are list
+    """
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None, threshold=18):
+        X_padded = []
+        y_padded = []
+        for title, labels in zip(X, y):
+            if len(title) > threshold:
+                title = title[:threshold]
+                labels = labels[:threshold]
+
+            padded_title = np.pad(
+                array=title,
+                pad_width=((0, threshold - len(title)), (0, 0)), # ajoute max_len-len(title_splited) à la fin de title splited
+                mode="constant", 
+                constant_values=-1
+            )
+            X_padded.append(padded_title)
+
+            padded_labels = np.pad(
+                array=labels, 
+                pad_width=(0, threshold - len(labels)), 
+                mode="constant", 
+                constant_values=-1
+            )
+            y_padded.append(padded_labels)
+
+        return X_padded, y_padded
+
+
+class PaddingTransformer_V2(BaseEstimator, TransformerMixin):
+    """
+    add padding to input & output to have consistent shape
+    works when features are dict
+    """
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None, threshold=18):
+        PADDING_TOKEN = {
+            "word": "<PAD>",
+            "is_capitalized": False,
+            "prefix-2": "##",
+            "suffix-2": "##",
+            "lemma": "<PAD>",
+            "is_starting_word": False,
+            "is_final_word": False,
+            "is_punct": False,
+            "is_stop": False,
+        }
+        PADDING_LABEL = -1
+        X_padded = [self._pad_list(sentence, threshold, PADDING_TOKEN) for sentence in X]
+        y_padded = [self._pad_list(labels, threshold, PADDING_LABEL) for labels in y]
+
+        return X_padded, y_padded
+
+    def _pad_list(self, sentence: list, max_length: int, padding_value: Any):
+        while len(sentence) < max_length:
+            sentence.append(padding_value)
+        return sentence

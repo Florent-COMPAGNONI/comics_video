@@ -2,7 +2,7 @@ import numpy as np
 import gensim 
 import pandas as pd
 
-df = pd.read_csv('/Users/boes/Data/NLP/names_train.csv')
+df = pd.read_csv('data/raw/train.csv')
 text = df['video_name'].tolist()
 
 training_sentences = [''.join(text)]

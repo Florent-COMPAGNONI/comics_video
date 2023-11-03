@@ -5,7 +5,8 @@ from tqdm import tqdm
 from sklearn.model_selection import cross_val_score
 from data.make_dataset import make_dataset
 from features.make_features import make_features
-from model.main import make_model, make_ner_model
+from features.token_features import custom_split
+from model.main import make_model, make_ner_model, make_ner_model_v2, make_ner_model_v3
 
 
 @click.group()
@@ -59,7 +60,58 @@ def evaluate(task, input_filename, model_dump_filename):
     if task == "is_comic_video":
         model = make_model()
     elif task == "is_name":
-        model = make_ner_model()
+        # """
+        # v1 prediction token par token avec RandomForest
+        # """
+        # model = make_ner_model()
+        # model.fit(X[:10_000],y[:10_000])
+        
+        # predict = model.predict(X[10_000:])
+        # print(f"Are there 1's in the predicted array ? {1 in predict}") 
+        # print(f"How many ? {list(predict).count(1)} vs {y[10_000:].count(1)} expected")
+        # tokens = []
+        # for title in df["video_name"].to_numpy():
+        #     splitted_title = custom_split(title)
+        #     for token in splitted_title:
+        #         tokens.append(token)
+        # for x, p in zip(tokens, predict):
+        #     print(x) if p == 1 else 0
+        
+        # """
+        # v2 prédiction séquences par séquences avec LSTM, padding à -1, les features sont sous la forme de list
+        # ne prédit que des 0
+        # """
+        # model = make_ner_model_v2()
+        # model.fit(X, y)
+        # prediction = model.predict(X)
+        # c = 0
+        # for p, labels, title in zip(prediction, y, df["video_name"]):
+        #     if 1 in p:
+        #         print(p)
+        #         print(labels)
+        #         print(title)
+        #         c += 1
+        # print(c)
+
+        """
+        v3 séquences par séquences avec CRF, padding, les features sont sous la forme de dictionnaires
+        meilleurs résulats pour l'instant
+        """
+        model = make_ner_model_v3()
+        model.fit(X, y)
+        prediction = model.predict(X)
+        c = 0
+        for p, labels, title in zip(prediction, y, df["video_name"]):
+            if 1 in p:
+                print(p)
+                print(labels)
+                print(title)
+                c += 1
+        print(c)
+        model.save_model("models/model_is_name_v3.pkl")
+
+        return # v2 & v3 ne peuvent pas être utilisé avec cross_validation_score
+
     elif task == "find_comic_name":
         raise Exception("This task is not implemented yet, stay tuned ;)")
     else:

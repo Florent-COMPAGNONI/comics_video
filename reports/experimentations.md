@@ -89,8 +89,34 @@ Pour cette tâche nous avons extrait des features pour chaqu'un des tokens. Les 
 - **is_punct**: si le token est de la ponctuation
 - **is_stop**: si le token est un stopword contenu dans la liste de nltk
 
+
 ## Prédiction token par token
 
 Notre première approche a été de predire un résultat pour chaque token indépendament de la séquence dans laquelle il se trouve.   
 Pour cela nous avons "aplatit" les inputs et outputs utilisé pour l'entrainement.  
 Le problème de cette méthode est que l'on se retrouve avec un dataset déséquilibré, ce qui pousse notre modèle à toujour prédir la label et le rend inutilisable pour la 3ème tâche.
+Un moyen de contrer ce problème est d'utiliser le paramètre *class_weight* qui permet de changer les poids associé à une classe.
+RandomForestClassifier, avec `class_weight={0:1, 1:5}`, ne prédit plus uniquement des 0 mais  les résultats ne sont pas satisfaisant.
+
+
+## Prédiction séquence par séquence
+
+Nous avons ensuite essayé des modèles capable de faire du *sequences labeling*. Il a fallut appliquer unpadding a notre dataset dans le but d'avoir des séquences de même tailles pour l'entrainement. Pour cela les séquences les plus courtes sont compléter avec une valeur par default. Ensuite le modèle les ignore avec un masque.
+
+### LSTM
+Les features retenue sont les même que pour la prédiction token par token.
+Malgrès plusieurs essai de paramètres et de régularisation le modèle ne prédit que des 0  
+Piste à explorer:
+- samples_weights -> pour permettre d'addreser le problème de répartition des label
+
+### CRF
+Les features retenue sont les même que pour la prédiction token par token et on y ajoute:
+- **word**: le mot complet
+- **prefix-2**: les 2 premiers charactères
+- **suffix-2**: les 2 derniers charactères
+Cela est possible car les CRF prennent des string en entrée, les labels doivent aussi être converti en string
+
+Cette approche est la plus satisfaisante pour l'instant.
+
+Pistes à explorer:
+- ajouter des features donnant des informations sur le token précèdent et suivant 

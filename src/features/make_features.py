@@ -1,14 +1,25 @@
-from features.token_features import FlattenTransformer, FlattenTransformer2, TokenFeaturesWithNLTK, ReshapeTransformer, custom_split
+from features.token_features import (
+    FlattenTransformer, 
+    FlattenTransformer2,
+    PaddingTransformer_V2, 
+    TokenFeaturesWithNLTK,
+    TokenFeaturesWithNLTK_v2, 
+    ReshapeTransformer, 
+    PaddingTransformer, 
+    custom_split
+)
 import spacy
 import pickle
 
 def make_features(df, task):
     y = get_output(df, task)
 
-    X = df["video_name"]
+    X = df["video_name"].to_numpy()
 
     if task == "is_name":
-        X, y = make_ner_features(X, y)
+        # X, y = make_ner_features(X, y) 
+        # X, y = make_ner_features_v2(X, y)
+        X, y = make_ner_features_v3(X, y)
     
     elif task == "find_comic_name":
         X, y = make_comic_name_features(X,y)
@@ -53,6 +64,7 @@ def make_comic_name_features(X,y):
     print(features)
     return features, comic_names_as_tokens
 
+
 def make_ner_features(X, y) -> tuple[list[int], list[int]]:
     """
     Extract feature and flatten for RandomForest
@@ -62,6 +74,22 @@ def make_ner_features(X, y) -> tuple[list[int], list[int]]:
 
     return X, y
 
+
+def make_ner_features_v2(X, y) -> tuple[list[int], list[int]]:
+    """
+    Extract feature and add padding
+    """
+    X_features = TokenFeaturesWithNLTK_v2().fit(X).transform(X)
+    X, y = PaddingTransformer().fit(X).transform(X_features, y)
+
+    return X, y
+
+
+def make_ner_features_v3(X, y):
+     X_features = TokenFeaturesWithNLTK().fit(X).transform(X)
+     X, y = PaddingTransformer_V2().fit(X).transform(X_features, y)
+
+     return X, y
 
 def get_output(df, task):
     if task == "is_comic_video":
