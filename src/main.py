@@ -4,7 +4,7 @@ import pickle
 from tqdm import tqdm
 from sklearn.model_selection import cross_val_score
 from data.make_dataset import make_dataset
-from features.make_features import make_features
+from features.make_features import make_features, transform_find_comic_name_label, transform_is_name_label
 from model.main import make_model, make_ner_model
 
 
@@ -48,9 +48,15 @@ def test(task, input_filename, model_dump_filename, output_filename):
     with open(model_dump_filename, 'rb') as f:
         model= pickle.load(f)
     
-    prediction = model.predict(X)
-    print(f"Are there 1's in the predicted array ? {1 in prediction}") 
-    print(prediction[2])
+    predictions = model.predict(X)
+    if task == 'find_comic_name':
+        transformed_predictions = transform_find_comic_name_label(df['video_name'],predictions)
+        for i in range(10):
+            print(transformed_predictions[i])
+    elif task == 'is_name':
+        transformed_predictions = transform_is_name_label(df['video_name'],predictions)
+        for i in range(10):
+            print(transformed_predictions[i])
 
 @click.command()
 @click.option("--task", help="Can be is_comic_video, is_name or find_comic_name")

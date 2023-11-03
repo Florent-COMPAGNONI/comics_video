@@ -135,7 +135,7 @@ class FlattenTransformer(BaseEstimator, TransformerMixin):
         return X_flat
     
 
-class TokenFeaturing(BaseEstimator, TransformerMixin):
+class TokenFeaturingAndPadding(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         return self
