@@ -5,8 +5,9 @@ from tqdm import tqdm
 from sklearn.model_selection import cross_val_score
 from data.make_dataset import make_dataset
 from features.make_features import make_features
-from model.main import make_model, make_ner_model, make_ner_model_v2, make_ner_model_v2
-
+from model.main import make_model, make_ner_model, make_ner_model_v2, make_find_name_model, make_find_name_model_v2
+import pandas as pd
+import tensorflow as tf
 
 @click.group()
 def cli():
@@ -23,10 +24,14 @@ def train(task, input_filename, model_dump_filename):
 
     if task == "is_comic_video":
         model = make_model()
-    elif task == "is_name" or task == "find_comic_name":
+    elif task == "is_name" :
         model = make_ner_model()
+    elif task == 'find_comic_name':
+        #model = make_find_name_model()
+        model = make_find_name_model_v2()
     else:
         raise Exception("Invalid task, valid tasks are: is_comic_video, is_name, find_comic_name")
+    
     model.fit(X, y)
 
     with open(model_dump_filename, "wb") as f:
@@ -46,11 +51,12 @@ def test(task, input_filename, model_dump_filename, output_filename):
     X, y = make_features(df, task)
 
     with open(model_dump_filename, 'rb') as f:
-        model= pickle.load(f)
+        model = pickle.load(f)
     
-    prediction = model.predict(X)
-    print(f"Are there 1's in the predicted array ? {1 in prediction}") 
-    print(prediction[2])
+    predictions = model.predict(X)
+    df_pred = pd.DataFrame()
+    df_pred['predictions'] = pd.Series(list(predictions))
+    df_pred.to_csv(output_filename, index=False, sep=';')
 
 @click.command()
 @click.option("--task", help="Can be is_comic_video, is_name or find_comic_name")
@@ -66,13 +72,19 @@ def evaluate(task, input_filename, model_dump_filename):
     # Object with .fit, .predict methods
     if task == "is_comic_video":
         model = make_model()
-    elif task == "is_name":      
-        model = make_ner_model_v2()
+
+    elif task == "is_name": 
+        model = make_ner_model()
+        return evaluate_model(model.pipeline, X, y)     
+        """model = make_ner_model_v2()
         model.fit(X, y)
-        return model.evaluate() # v2 ne peut pas être utilisé avec cross_validation_score
+        return model.evaluate() # v2 ne peut pas être utilisé avec cross_validation_score"""
 
     elif task == "find_comic_name":
-        raise Exception("This task is not implemented yet, stay tuned ;)")
+        model = make_find_name_model()
+        return model.evaluate(X,y)
+        """model = make_find_name_model_v2()
+        return evaluate_model(model.pipeline, X, y) """
     else:
         raise Exception("Invalid task, valid tasks are: is_comic_video, is_name, find_comic_name")
 
@@ -86,7 +98,7 @@ def evaluate(task, input_filename, model_dump_filename):
 def evaluate_model(model, X, y):
     # Scikit learn has function for cross validation
     list_scores = []
-    for i in tqdm(range(1)):
+    for i in tqdm(range(5)):
         scores = cross_val_score(model, X, y, scoring="accuracy")
         list_scores.append(np.mean(scores))
 

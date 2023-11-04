@@ -1,13 +1,20 @@
 import numpy as np
 import gensim 
 import pandas as pd
+import os
 
-df = pd.read_csv('data/raw/train.csv')
-text = df['video_name'].tolist()
+file_path = '/Users/boes/Data/NLP/names_train.csv'
 
-training_sentences = [''.join(text)]
-model = gensim.models.Word2Vec(training_sentences, vector_size=100)
-w2v = {word: model.wv[word] for word in model.wv.index_to_key}
+if os.path.exists(file_path):
+    df = pd.read_csv(file_path)
+    text = df['video_name'].tolist()
+
+    training_sentences = [''.join(text)]
+    model = gensim.models.Word2Vec(training_sentences, vector_size=100)
+    w2v = {word: model.wv[word] for word in model.wv.index_to_key}
+else:
+    print('The input file to create the embedding does not exist.') 
+
 
 class MeanEmbeddingVectorizer(object):
     def __init__(self):
