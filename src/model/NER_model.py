@@ -5,17 +5,39 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 import tensorflow as tf
 import sklearn_crfsuite
+from sklearn_crfsuite.metrics import sequence_accuracy_score
+from features.token_features import  TokenFeaturingAndPadding, TokenFeaturesWithNLTK,custom_split
 from sklearn_crfsuite.metrics import sequence_accuracy_score, flat_accuracy_score
 
+def remove_padding(sentences,predicted_labels):
+    transformed_labels = []
+    for index in range(len(predicted_labels)):
+        sentence_size = len(custom_split(sentences[index]))
+        label = predicted_labels[index][:sentence_size]
+        transformed_labels.append(label)
+    
+    return transformed_labels
+  
 class NER_model:
     """
     use RandomForestClassifier and predict token by token (require flatten)
     """
     def __init__(self):
         self.pipeline = Pipeline(
-            [("clf", RandomForestClassifier(class_weight={0:1, 1:5}))], # class_weight permet de contrebalancer la faible proportion de 1 dans les label
+            [('NLTk', TokenFeaturesWithNLTK()),
+             ('Padding', TokenFeaturingAndPadding()),
+            ("clf", RandomForestClassifier())], 
         )
 
+    def fit(self, X, y):
+        #y_padded = tf.keras.preprocessing.sequence.pad_sequences(y, maxlen=30, padding='post', truncating='post', value=0)
+        self.pipeline = self.pipeline.fit(X,y)
+
+    def predict(self, X) :
+        predicted_labels = self.pipeline.predict(X)
+        # remove padding
+        predicted_labels = remove_padding(X,predicted_labels)
+        return predicted_labels
 
 class NER_model_v2:
     """

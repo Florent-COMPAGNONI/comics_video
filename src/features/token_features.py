@@ -3,12 +3,12 @@ import spacy
 import re
 import string
 import numpy as np
-from spacy.tokens import Doc
 from sklearn.base import BaseEstimator, TransformerMixin
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from tqdm import tqdm
 import tensorflow as tf
+import pickle
 
 
 def custom_split(s: str) -> list[str]:
@@ -37,7 +37,7 @@ class TokenFeaturesWithNLTK(BaseEstimator, TransformerMixin):
 
     def transform(self, X) -> list[list[dict]]:
         features = []
-        for title in tqdm(X, desc="Tokens Features Extraction: "):
+        for title in X:
             splited_title = custom_split(title)
             title_length = len(splited_title)
             tokens_data = []
@@ -109,12 +109,32 @@ class FlattenTransformer(BaseEstimator, TransformerMixin):
         return X_flat
     
 
-class TokenFeaturing(BaseEstimator, TransformerMixin):
+class TokenFeaturingAndPadding(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         return self
 
-    def transform(self, X, y=None):
+    def transform(self, X):
+        X_token_features = []
+        for sentence in X:
+            sentence_features = []
+            for token in sentence :
+                token_features = [
+                    1 if token["is_capitalized"] else 0,
+                    1 if token["is_lemma"] else 0,
+                    1 if token["is_starting_word"] else 0,
+                    1 if token["is_final_word"] else 0,
+                    1 if token["is_punct"] else 0,
+                    1 if token["is_stop"] else 0,
+                ]
+                sentence_features.append(token_features)
+            X_token_features.append([token_feature for token in sentence_features for token_feature in token])
+            #X_token_features.append(sentence_features)
+            X_padded = tf.keras.preprocessing.sequence.pad_sequences(X_token_features, maxlen=30*6, padding='post', truncating='post', value=0)
+        
+        return X_padded
+    
+    def transform2(self, X, y=None):
         X_token_features = []
         for sentence in X:
             sentence_features = []
@@ -140,6 +160,28 @@ class TokenFeaturing(BaseEstimator, TransformerMixin):
         
         else :
             return X_padded, None
+    
+class CombineFeatures(BaseEstimator, TransformerMixin):
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        with open(r"./models/model_is_comic_video.pkl", 'rb') as f:
+            model_is_comic_video = pickle.load(f)
+    
+        with open(r"./models/model_is_name.pkl", 'rb') as f:
+            model_is_name = pickle.load(f)
+
+        feature_1 = model_is_comic_video.predict(X)
+        feature_2 = model_is_name.pipeline.predict(X)
+        features = []
+
+        for i in range(len(feature_1)):
+            features.append([feature_1[i]] + list(feature_2[i]))
+        
+        return features
+    
 
 
 class ReshapeTransformer(BaseEstimator, TransformerMixin):
@@ -196,6 +238,10 @@ class PaddingTransformer(BaseEstimator, TransformerMixin):
         }
         PADDING_LABEL = -1
         X_padded = [self._pad_list(sentence, threshold, PADDING_TOKEN) for sentence in X]
+
+        if y is None :
+            return X_padded, y
+        
         y_padded = [self._pad_list(labels, threshold, PADDING_LABEL) for labels in y]
 
         return X_padded, y_padded
