@@ -103,20 +103,18 @@ RandomForestClassifier, avec `class_weight={0:1, 1:5}`, ne prédit plus uniqueme
 
 Nous avons ensuite essayé des modèles capable de faire du *sequences labeling*. Il a fallut appliquer unpadding a notre dataset dans le but d'avoir des séquences de même tailles pour l'entrainement. Pour cela les séquences les plus courtes sont compléter avec une valeur par default. Ensuite le modèle les ignore avec un masque.
 
-### LSTM
-Les features retenue sont les même que pour la prédiction token par token.
-Malgrès plusieurs essai de paramètres et de régularisation le modèle ne prédit que des 0  
-Piste à explorer:
-- samples_weights -> pour permettre d'addreser le problème de répartition des label
-
 ### CRF
 Les features retenue sont les même que pour la prédiction token par token et on y ajoute:
 - **word**: le mot complet
 - **prefix-2**: les 2 premiers charactères
 - **suffix-2**: les 2 derniers charactères
-Cela est possible car les CRF prennent des string en entrée, les labels doivent aussi être converti en string
+Cela est possible car les CRF prennent des string en entrée, les labels doivent aussi être convertis en string
 
-Cette approche est la plus satisfaisante pour l'instant.
+premier résultat, le modèle est autour de 80% d'accuracy
 
 Pistes à explorer:
 - ajouter des features donnant des informations sur le token précèdent et suivant 
+- ajouter le POS tagging en features
+
+# Observations
+En travaillant sur la tâche is_name, nou avont remarquer que les données du dataset était imcomplètes. En effet (à partir de la 300 environ) is_name est très souvent un tableau de 0 malgrès qu'il y est des noms présent de le titre et dans  la colonne comic_name
