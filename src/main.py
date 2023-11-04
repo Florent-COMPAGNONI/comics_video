@@ -6,7 +6,7 @@ from sklearn.model_selection import cross_val_score
 from data.make_dataset import make_dataset
 from features.make_features import make_features
 from features.token_features import custom_split
-from model.main import make_model, make_ner_model, make_ner_model_v2, make_ner_model_v3
+from model.main import make_model, make_ner_model, make_ner_model_v2, make_ner_model_v2
 
 
 @click.group()
@@ -85,27 +85,12 @@ def evaluate(task, input_filename, model_dump_filename):
         # for x, p in zip(tokens, predict):
         #     print(x) if p == 1 else 0
         
-        # """
-        # v2 prédiction séquences par séquences avec LSTM, padding à -1, les features sont sous la forme de list
-        # ne prédit que des 0
-        # """
-        # model = make_ner_model_v2()
-        # model.fit(X, y)
-        # prediction = model.predict(X)
-        # c = 0
-        # for p, labels, title in zip(prediction, y, df["video_name"]):
-        #     if 1 in p:
-        #         print(p)
-        #         print(labels)
-        #         print(title)
-        #         c += 1
-        # print(c)
 
         """
         v3 séquences par séquences avec CRF, padding, les features sont sous la forme de dictionnaires
         meilleurs résulats pour l'instant
         """
-        model = make_ner_model_v3()
+        model = make_ner_model_v2()
         model.fit(X, y)
         prediction = model.predict(X)
         c = 0

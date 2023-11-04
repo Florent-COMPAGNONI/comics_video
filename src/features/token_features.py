@@ -27,18 +27,17 @@ def custom_split(s: str) -> list[str]:
 class TokenFeaturesWithNLTK(BaseEstimator, TransformerMixin):
     """
     Custom transformer to extract token-level features with nltk
+    token features are represented in a dict
     """
-
     def fit(self, X, y=None):
-        self.X = X
         self.wnl = WordNetLemmatizer()
         self.punctuation = string.punctuation
         self.stopwords = stopwords.words("french")
         return self
 
-    def transform(self, X):
+    def transform(self, X) -> list[list[dict]]:
         features = []
-        for title in tqdm(self.X, desc="Tokens Features Extraction: "):
+        for title in tqdm(X, desc="Tokens Features Extraction: "):
             splited_title = custom_split(title)
             tokens_data = [
                 {
@@ -53,80 +52,6 @@ class TokenFeaturesWithNLTK(BaseEstimator, TransformerMixin):
                     "is_stop": token in self.stopwords,
                 }
                 for i, token in enumerate(splited_title)
-            ]
-            features.append(tokens_data)
-        return features
-
-
-class TokenFeaturesWithNLTK_v2(BaseEstimator, TransformerMixin):
-    """
-    Custom transformer to extract token-level features with nltk
-    """
-
-    def fit(self, X, y=None):
-        self.X = X
-        self.wnl = WordNetLemmatizer()
-        self.punctuation = string.punctuation
-        self.stopwords = stopwords.words("french")
-        return self
-
-    def transform(self, X):
-        features = []
-        for title in tqdm(self.X, desc="Tokens Features Extraction: "):
-            splited_title = custom_split(title)
-            tokens_data = [
-                [
-                    1 if token[0].isupper() else 0,                 # is_capitalized
-                    1 if token == self.wnl.lemmatize(token) else 0, # is_lemma
-                    1 if i == 0 else 0,                             # is_starting_word
-                    1 if i == len(splited_title) - 1 else 0,        # is_final_word
-                    1 if token in self.punctuation else 0,          # is_punct
-                    1 if token in self.stopwords else 0,            # is_stopword
-                ]
-                for i, token in enumerate(splited_title)
-            ]
-            features.append(tokens_data)
-        return features
-
-class TokenFeaturesWithSpacy(BaseEstimator, TransformerMixin):
-    """
-    not working
-    Custom transformer to extract token-level features with nltk
-    download spacy model using command: python -m spacy download fr_core_news_sm
-    """
-
-    def fit(self, X, y=None):
-        self.X = X
-
-        self.nlp = spacy.load("fr_core_news_sm")
-        # prevent splitting
-        # self.nlp.tokenizer.token_match = lambda s: re.findall(r"[\S\u00a0]+|  | $", s)
-        self.nlp.tokenizer = lambda s: Doc(
-            self.nlp.vocab,
-            words=custom_split(s),
-            spaces=[False] * len(custom_split(s)),
-        )
-        return self
-
-    def transform(self, X):
-        features = []
-        for title in self.X:
-            splited_title = custom_split(title)
-            spacy_words = [token for word in splited_title for token in self.nlp(word)]
-
-            tokens_data = [
-                {
-                    "word": token.text,
-                    "is_capitalized": token.text[0].isupper(),
-                    "prefix-2": token.text[:2],
-                    "suffix-2": token.text[-2:],
-                    "is_lemma": token.text == token[0].lemma_,
-                    "is_starting_word": i == 0,
-                    "is_final_word": i == len(splited_title) - 1,
-                    "is_punct": token.is_punct,
-                    "is_stop": token.is_stop,
-                }
-                for i, token in enumerate(spacy_words)
             ]
             features.append(tokens_data)
         return features
@@ -230,49 +155,13 @@ class ReshapeTransformer(BaseEstimator, TransformerMixin):
 class PaddingTransformer(BaseEstimator, TransformerMixin):
     """
     add padding to input & output to have consistent shape
-    work when features are list
-    """
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X, y=None, threshold=18):
-        X_padded = []
-        y_padded = []
-        for title, labels in zip(X, y):
-            if len(title) > threshold:
-                title = title[:threshold]
-                labels = labels[:threshold]
-
-            padded_title = np.pad(
-                array=title,
-                pad_width=((0, threshold - len(title)), (0, 0)), # ajoute max_len-len(title_splited) à la fin de title splited
-                mode="constant", 
-                constant_values=-1
-            )
-            X_padded.append(padded_title)
-
-            padded_labels = np.pad(
-                array=labels, 
-                pad_width=(0, threshold - len(labels)), 
-                mode="constant", 
-                constant_values=-1
-            )
-            y_padded.append(padded_labels)
-
-        return X_padded, y_padded
-
-
-class PaddingTransformer_V2(BaseEstimator, TransformerMixin):
-    """
-    add padding to input & output to have consistent shape
     works when features are dict
     """
 
     def fit(self, X, y=None):
         return self
 
-    def transform(self, X, y=None, threshold=18):
+    def transform(self, X, y=None, threshold=18) -> list[list[dict]]:
         PADDING_TOKEN = {
             "word": "<PAD>",
             "is_capitalized": False,
@@ -290,7 +179,7 @@ class PaddingTransformer_V2(BaseEstimator, TransformerMixin):
 
         return X_padded, y_padded
 
-    def _pad_list(self, sentence: list, max_length: int, padding_value: Any):
+    def _pad_list(self, sentence: list, max_length: int, padding_value: Any) -> list:
         while len(sentence) < max_length:
             sentence.append(padding_value)
         return sentence

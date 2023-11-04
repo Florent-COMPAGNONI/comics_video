@@ -1,11 +1,8 @@
 from features.token_features import (
     FlattenTransformer, 
-    FlattenTransformer2,
-    PaddingTransformer_V2, 
+    PaddingTransformer, 
     TokenFeaturesWithNLTK,
-    TokenFeaturesWithNLTK_v2, 
     ReshapeTransformer, 
-    PaddingTransformer,
     TokenFeaturing,
     custom_split
 )
@@ -20,8 +17,7 @@ def make_features(df, task):
 
     if task == "is_name":
         # X, y = make_ner_features(X, y) 
-        # X, y = make_ner_features_v2(X, y)
-        X, y = make_ner_features_v3(X, y)
+        X, y = make_ner_features_v2(X, y)
     
     elif task == "find_comic_name":
         X, y = make_comic_name_features(X,y)
@@ -61,6 +57,7 @@ def make_comic_name_features(X,y):
     
     return features, comic_names_as_tokens
 
+
 def make_ner_features(X, y) -> tuple[list[int], list[int]]:
     """
     Extract feature and flatten for RandomForest
@@ -71,19 +68,12 @@ def make_ner_features(X, y) -> tuple[list[int], list[int]]:
     return X, y
 
 
-def make_ner_features_v2(X, y) -> tuple[list[int], list[int]]:
-    """
-    Extract feature and add padding
-    """
-    X_features = TokenFeaturesWithNLTK_v2().fit(X).transform(X)
-    X, y = PaddingTransformer().fit(X).transform(X_features, y)
-
-    return X, y
-
-
-def make_ner_features_v3(X, y):
+def make_ner_features_v2(X, y):
+     """
+     make ner features for CRF model
+     """
      X_features = TokenFeaturesWithNLTK().fit(X).transform(X)
-     X, y = PaddingTransformer_V2().fit(X).transform(X_features, y)
+     X, y = PaddingTransformer().fit(X).transform(X_features, y)
 
      return X, y
 
