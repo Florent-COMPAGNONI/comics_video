@@ -39,8 +39,10 @@ class TokenFeaturesWithNLTK(BaseEstimator, TransformerMixin):
         features = []
         for title in tqdm(X, desc="Tokens Features Extraction: "):
             splited_title = custom_split(title)
-            tokens_data = [
-                {
+            title_length = len(splited_title)
+            tokens_data = []
+            for i, token in enumerate(splited_title):
+                token_features = {
                     "word": token,
                     "is_capitalized": token[0].isupper(),
                     "prefix-2": token[:2],
@@ -50,9 +52,28 @@ class TokenFeaturesWithNLTK(BaseEstimator, TransformerMixin):
                     "is_final_word": i == len(splited_title) - 1,
                     "is_punct": token in self.punctuation,
                     "is_stop": token in self.stopwords,
+                    # Features for the previous token (if it exists)
+                    "prev_word": splited_title[i - 1] if i > 0 else "<START>",
+                    "prev_is_capitalized": splited_title[i - 1][0].isupper() if i > 0 else "<START>",
+                    "prev_prefix-2": splited_title[i - 1][:2] if i > 0 else "<START>",
+                    "prev_suffix-2": splited_title[i - 1][-2:] if i > 0 else "<START>",
+                    "prev_is_lemma": token == self.wnl.lemmatize(token) if i > 0 else "<START>",
+                    "prev_is_starting_word": i == 0  if i > 0 else "<START>",
+                    "prev_is_final_word": i == len(splited_title) - 1  if i > 0 else "<START>",
+                    "prev_is_punct": token in self.punctuation if i > 0 else "<START>",
+                    "prev_is_stop": token in self.stopwords if i > 0 else "<START>",
+                    # # Features for the next token (if it exists)
+                    "next_word": splited_title[i + 1] if i < title_length - 1 else "<END>",
+                    "next_is_capitalized": splited_title[i + 1][0].isupper() if i < title_length - 1 else "<END>",
+                    "next_prefix-2": splited_title[i + 1][:2] if i < title_length - 1 else "<END>",
+                    "next_suffix-2": splited_title[i + 1][-2:] if i < title_length - 1 else "<END>",
+                    "is_lemma": token == self.wnl.lemmatize(token) if i < title_length - 1 else "<END>",
+                    "is_starting_word": i == 0  if i < title_length - 1 else "<END>",
+                    "is_final_word": i == len(splited_title) - 1 if i < title_length - 1 else "<END>",
+                    "is_punct": token in self.punctuation if i < title_length - 1 else "<END>",
+                    "is_stop": token in self.stopwords if i < title_length - 1 else "<END>",
                 }
-                for i, token in enumerate(splited_title)
-            ]
+                tokens_data.append(token_features)
             features.append(tokens_data)
         return features
 

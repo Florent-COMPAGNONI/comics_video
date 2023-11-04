@@ -69,7 +69,7 @@ def evaluate(task, input_filename, model_dump_filename):
     elif task == "is_name":      
         model = make_ner_model_v2()
         model.fit(X, y)
-        return model.evaluate() # v2 ne peut pas être utilisé avec cross_validation_score
+        return model.evaluate(X, y) # v2 ne peut pas être utilisé avec cross_validation_score
 
     elif task == "find_comic_name":
         raise Exception("This task is not implemented yet, stay tuned ;)")
