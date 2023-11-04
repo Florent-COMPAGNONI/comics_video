@@ -76,11 +76,11 @@ Dans embedding.py nous utilisons gensim.models.Word2Vec() pour entrainer le Word
 Accuracy 87.5, donc ne fonctionne pas très bien
 
 
-# Experimentation sur le modèle de Named Entity Recognition 
+# Expérimentation sur le modèle de Named Entity Recognition  
 
 ## Token preprocessing avec NLTK
 
-Pour cette tâche nous avons extrait des features pour chaqu'un des tokens. Les features retenus dans un premier temps sont toute de type binaires
+Pour cette tâche nous avons extrait des features pour chacun des tokens. Les features retenus dans un premier temps sont toute de type binaires
 
 - **is_capitalized**: si la première lettre est une majuscule
 - **is_lemma**: si la lemmatisation du token ne produit pas de changement
@@ -92,29 +92,31 @@ Pour cette tâche nous avons extrait des features pour chaqu'un des tokens. Les 
 
 ## Prédiction token par token
 
-Notre première approche a été de predire un résultat pour chaque token indépendament de la séquence dans laquelle il se trouve.   
-Pour cela nous avons "aplatit" les inputs et outputs utilisé pour l'entrainement.  
-Le problème de cette méthode est que l'on se retrouve avec un dataset déséquilibré, ce qui pousse notre modèle à toujour prédir la label et le rend inutilisable pour la 3ème tâche.
+Notre première approche a été de prédire un résultat pour chaque token indépendamment de la séquence dans laquelle il se trouve.   
+Pour cela nous avons "aplatit" les inputs et outputs utilisé pour l’entraînement.  
+Le problème de cette méthode est que l'on se retrouve avec un dataset déséquilibré, ce qui pousse notre modèle à toujours prédire la label et le rend inutilisable pour la 3ème tâche.
 Un moyen de contrer ce problème est d'utiliser le paramètre *class_weight* qui permet de changer les poids associé à une classe.
 RandomForestClassifier, avec `class_weight={0:1, 1:5}`, ne prédit plus uniquement des 0 mais  les résultats ne sont pas satisfaisant.
 
 
 ## Prédiction séquence par séquence
 
-Nous avons ensuite essayé des modèles capable de faire du *sequences labeling*. Il a fallut appliquer unpadding a notre dataset dans le but d'avoir des séquences de même tailles pour l'entrainement. Pour cela les séquences les plus courtes sont compléter avec une valeur par default. Ensuite le modèle les ignore avec un masque.
+Nous avons ensuite essayé des modèles capable de faire du *séquences labeling*. Il a fallut appliquer un padding a notre dataset dans le but d'avoir des séquences de même tailles pour l’entraînement. Pour cela les séquences les plus courtes sont compléter avec une valeur par default. Ensuite le modèle les ignore avec un masque.
 
 ### CRF
 Les features retenue sont les même que pour la prédiction token par token et on y ajoute:
 - **word**: le mot complet
-- **prefix-2**: les 2 premiers charactères
-- **suffix-2**: les 2 derniers charactères
+- **prefix-2**: les 2 premiers caractères
+- **suffix-2**: les 2 derniers caractères
 Cela est possible car les CRF prennent des string en entrée, les labels doivent aussi être convertis en string
 
-premier résultat, le modèle est autour de 80% d'accuracy
+Premier résultat, le modèle est autour de 77% de précision
+
+Nous avons ensuite ajouté des features donnant des information sur les tokens précédent et suivant pour augmenter la perception du context par le modèle, nous avons gardé  les mêmes features que pour le token courant.
+Résultat toujours autour 77% de précision avec les nouvelles features, le modèle ne performe pas mieux.
 
 Pistes à explorer:
-- ajouter des features donnant des informations sur le token précèdent et suivant 
 - ajouter le POS tagging en features
 
 # Observations
-En travaillant sur la tâche is_name, nou avont remarquer que les données du dataset était imcomplètes. En effet (à partir de la 300 environ) is_name est très souvent un tableau de 0 malgrès qu'il y est des noms présent de le titre et dans  la colonne comic_name
+En travaillant sur la tâche is_name, nous avons remarquer que les données du dataset était incomplètes. En effet (à partir de la 300 environ) is_name est très souvent un tableau de 0 malgré qu'il y est des noms présent de le titre et dans  la colonne comic_name

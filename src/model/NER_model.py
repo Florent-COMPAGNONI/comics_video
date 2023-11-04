@@ -7,6 +7,7 @@ import tensorflow as tf
 import sklearn_crfsuite
 from sklearn_crfsuite.metrics import sequence_accuracy_score
 from features.token_features import  TokenFeaturingAndPadding, TokenFeaturesWithNLTK,custom_split
+from sklearn_crfsuite.metrics import sequence_accuracy_score, flat_accuracy_score
 
 def remove_padding(sentences,predicted_labels):
     transformed_labels = []
@@ -16,7 +17,7 @@ def remove_padding(sentences,predicted_labels):
         transformed_labels.append(label)
     
     return transformed_labels
-
+  
 class NER_model:
     """
     use RandomForestClassifier and predict token by token (require flatten)
@@ -67,7 +68,7 @@ class NER_model_v2:
         # show accurracy
         predicted_labels = self.model.predict(test_data)
         accuracy = sequence_accuracy_score(test_labels, predicted_labels)
-        print(f"Accuracy: {accuracy * 100:.2f}%")
+        print(f"Training accuracy: {accuracy * 100:.2f}%")
     
     def predict(self, X) -> list[list[int]]:
         predicted_labels = self.model.predict(X)
@@ -79,9 +80,13 @@ class NER_model_v2:
         return predicted_labels
     
     def evaluate(self, X, y) -> float:
+        y = [
+            [str(label) for label in labels] 
+            for labels in y
+        ]
         predicted_labels = self.model.predict(X)
-        accuracy = sequence_accuracy_score(y, predicted_labels)
-        print(f"Accuracy: {accuracy * 100:.2f}%")
+        accuracy = flat_accuracy_score(y, predicted_labels)
+        print(f"Got accuracy: {accuracy * 100:.2f}%")
 
     def save_model(self, filename: str) -> None:
         with open(filename, 'wb') as f:
