@@ -118,6 +118,16 @@ Dans la methode 'predict' de notre classe NER_model, nous transformons la sortie
 
 Nous atteignons une accuracy de 76% en moyen avec ces étapes de préprocessing et le Random Forest model. Nous pensons que ce score médiocre est lié aux erreurs que nous avons détectées dans le dataset : à partir de la ligne 300 (environ) is_name est très souvent un tableau de 0 malgrès qu'il s'agit d'une vidéo comique et qu'il y a des noms présent de le titre (et parfois aussi dans la colonne comic_name). Exemples : Le questionnaire Jupiproust de Gérard Garouste - Le questionnaire Jupiproust, Le questionnaire Jupiproust d'Alexis Rosenfeld, Le karcher de Valérie Pécresse - Le Sketch Par Jupiter, Les voisins de mes voisins sont mes voisins - La chronique de Léo Karmann, Bloqué - Le Sketch Par Jupiter avec Gringe,... 
 
+#### Exploration features (dans TokenFeaturingAndPadding)
+1. Le premier feature logique est 'is_cap' (si le mot commence avec une majuscule : des noms commencent avec des majuscules). En utilisant seulement ce feauture, on atteint une accuracy de 72%
+2. En rajoutant le feautre 'is_starting' (si le mot est positioné au début de la phrase : ceci pourrait être une indice également) : Accuracy de 73% (on monte de 1%)
+3. En rajoutant le feauture 'is_final' (si le mot est positioné à la fin d'une phrase : souvent les noms se retrouvent à la fin) : Accuracy de 73,3% (on monte de 0.3%)
+4. En rajoutant le feature is_stop (si le mot est un stopwords : les noms ne peuvent pas être des stopwords) : On atteint une accuracy de 76% (on monte de environ 3%), logique vu que les stopwords sont éliminé, car le model va comprendre qu'il ne s'agit jamais des noms
+5. On teste de rajouter le feature qui détecte les signe de ponctuation(is_punct) ce qui pourrait élimener plus de tokens, mais bizarrement ceci fait légèrement déscendre l'accuracy de 0.5% (on atteint 75.5%). On décide donc de ne pas utiliser ce feature
+6. En rajoutant le feature qui vérifie si le token est un mot "racine" (is_lemme), l'accuracy déscend un tout petit peu : On atteint un accuracy de 75.8%. On n'utilisera pas non plus ce feature pour la prédiction
+7. En rajoutant le feature qui vérifie si le token précédent est un stopword (prev_is_stop) on ne gagne pas en accuracy. On atteint toujours 76%
+8. En rajoutant le feature qui vérifie si le token précédent est une signe de ponctuation (prev_is_punct) notre accuracy augmente de nouveau et on atteint une accuracy de 76,3%
+
 ### CRF (NER_model_v2)
 Nous avons testé un deuxième model pour la tâche is_name.
 Les features retenue sont les même que pour la prédiction token par token et on y ajoute:

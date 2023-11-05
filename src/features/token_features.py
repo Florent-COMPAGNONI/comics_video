@@ -76,37 +76,6 @@ class TokenFeaturesWithNLTK(BaseEstimator, TransformerMixin):
                 tokens_data.append(token_features)
             features.append(tokens_data)
         return features
-
-
-class FlattenTransformer(BaseEstimator, TransformerMixin):
-    """
-    Flatten the feature dict, to be used to train classic ml model
-    """
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X, y=None):
-        X_flat = [
-            [
-                1 if token_features["is_capitalized"] else 0,
-                1 if token_features["is_lemma"] else 0,
-                1 if token_features["is_starting_word"] else 0,
-                1 if token_features["is_final_word"] else 0,
-                1 if token_features["is_punct"] else 0,
-                1 if token_features["is_stop"] else 0,
-            ]
-            for sentence_features in X
-            for token_features in sentence_features
-        ]
-        if y is not None:
-            y_flat = [label for labels in y for label in labels]
-            # print percentage of 1's 
-            one_list = [i for i in y_flat if i == 1]
-            print(1-(len(one_list)/len(y_flat)))
-            return X_flat, y_flat
-
-        return X_flat
     
 
 class TokenFeaturingAndPadding(BaseEstimator, TransformerMixin):
@@ -121,17 +90,20 @@ class TokenFeaturingAndPadding(BaseEstimator, TransformerMixin):
             for token in sentence :
                 token_features = [
                     1 if token["is_capitalized"] else 0,
-                    1 if token["is_lemma"] else 0,
+                    #1 if token["is_lemma"] else 0,
                     1 if token["is_starting_word"] else 0,
                     1 if token["is_final_word"] else 0,
-                    1 if token["is_punct"] else 0,
+                    #1 if token["is_punct"] else 0,
                     1 if token["is_stop"] else 0,
+                    1 if token["prev_is_stop"] else 0,
+                    1 if token["prev_is_punct"] else 0,
                 ]
                 sentence_features.append(token_features)
             X_token_features.append([token_feature for token in sentence_features for token_feature in token])
-            #X_token_features.append(sentence_features)
-            X_padded = tf.keras.preprocessing.sequence.pad_sequences(X_token_features, maxlen=30*6, padding='post', truncating='post', value=0)
-        
+
+        #maxlen=30*x : x dépend du nombre de token_features 
+        X_padded = tf.keras.preprocessing.sequence.pad_sequences(X_token_features, maxlen=30*6, padding='post', truncating='post', value=0)
+
         return X_padded
     
     def transform2(self, X, y=None):
@@ -181,38 +153,6 @@ class CombineFeatures(BaseEstimator, TransformerMixin):
             features.append([feature_1[i]] + list(feature_2[i]))
         
         return features
-    
-
-
-class ReshapeTransformer(BaseEstimator, TransformerMixin):
-    """
-    Reshape the sentces after prediction
-    """
-
-    def __init__(self):
-        self.sentence_lengths = []
-
-    def fit(self, X, y=None):
-        # Store the lengths of the sentences for reshaping during transform
-        self.sentence_lengths = [len(sentence) for sentence in X]
-        return self
-
-    def transform(self, X, y=None):
-        X_reshaped = []
-        start = 0
-        for length in self.sentence_lengths:
-            X_reshaped.append(X[start : start + length])
-            start += length
-
-        if y is not None:
-            start = 0
-            y_reshaped = []
-            for length in self.sentence_lengths:
-                y_reshaped.append(y[start : start + length])
-                start += length
-            return X_reshaped, y_reshaped
-
-        return X_reshaped
 
 
 class PaddingTransformer(BaseEstimator, TransformerMixin):
@@ -250,3 +190,63 @@ class PaddingTransformer(BaseEstimator, TransformerMixin):
         while len(sentence) < max_length:
             sentence.append(padding_value)
         return sentence
+
+class FlattenTransformer(BaseEstimator, TransformerMixin):
+    """
+    Flatten the feature dict, to be used to train classic ml model
+    """
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        X_flat = [
+            [
+                1 if token_features["is_capitalized"] else 0,
+                1 if token_features["is_lemma"] else 0,
+                1 if token_features["is_starting_word"] else 0,
+                1 if token_features["is_final_word"] else 0,
+                1 if token_features["is_punct"] else 0,
+                1 if token_features["is_stop"] else 0,
+            ]
+            for sentence_features in X
+            for token_features in sentence_features
+        ]
+        if y is not None:
+            y_flat = [label for labels in y for label in labels]
+            # print percentage of 1's 
+            one_list = [i for i in y_flat if i == 1]
+            print(1-(len(one_list)/len(y_flat)))
+            return X_flat, y_flat
+
+        return X_flat
+    
+class ReshapeTransformer(BaseEstimator, TransformerMixin):
+    """
+    Reshape the sentces after prediction
+    """
+
+    def __init__(self):
+        self.sentence_lengths = []
+
+    def fit(self, X, y=None):
+        # Store the lengths of the sentences for reshaping during transform
+        self.sentence_lengths = [len(sentence) for sentence in X]
+        return self
+
+    def transform(self, X, y=None):
+        X_reshaped = []
+        start = 0
+        for length in self.sentence_lengths:
+            X_reshaped.append(X[start : start + length])
+            start += length
+
+        if y is not None:
+            start = 0
+            y_reshaped = []
+            for length in self.sentence_lengths:
+                y_reshaped.append(y[start : start + length])
+                start += length
+            return X_reshaped, y_reshaped
+
+        return X_reshaped
